@@ -137,7 +137,7 @@
 
             modal.innerHTML = `
                 <div style="font-size:16px;font-weight:bold;margin-bottom:6px;">
-                    📅 Novo Lembrete
+                    📅 Novo LembreteSSS
                 </div>
 
                 <div style="font-size:24px;color:#22c55e;margin-bottom:10px;">
