@@ -102,6 +102,9 @@
         const content = document.createElement('div');
         content.style.padding = '10px';
         content.id = 'clientesList';
+        content.style.padding = '10px';
+        content.style.maxHeight = '60vh';
+        content.style.overflow = 'auto';
 
         // ===== RENDER =====
         function renderClientes() {
