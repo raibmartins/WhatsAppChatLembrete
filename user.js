@@ -4,12 +4,13 @@
 // @version      1.0.0
 // @description  Loader fixo do WhatsApp Reminder
 
-// 🔥 URLs de atualização
 // @updateURL    https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/main/user.js
 // @downloadURL  https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/main/user.js
 
 // @match        https://web.whatsapp.com/*
-// @require      https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/main/loader.js
+
+// @require      https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/main/janela.js
+// @require      https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/main/botao.js
 // Nenhuma API especial necessária
 // @grant        none
 // ==/UserScript==
