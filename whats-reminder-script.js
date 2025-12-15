@@ -5,7 +5,7 @@
 // @description  Injeta botão e janela no WhatsApp Web
 // @match        https://web.whatsapp.com/*
 // @grant        none
-// @require      https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/main/WhatsReminderCore.js
+// @require      https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/main/whats-reminder-core.js
 // ==/UserScript==
 
 (function () {
