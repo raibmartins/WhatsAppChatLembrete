@@ -11,7 +11,6 @@
 
 // @require      https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/main/janela.js
 // @require      https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/main/botao.js
-// Nenhuma API especial necessária
 // @grant        none
 // ==/UserScript==
 
