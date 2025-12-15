@@ -10,5 +10,5 @@
 
 (function () {
     'use strict';
-    console.log('Scripts botao.js e janela.js carregados');
+    console.log('WhatsReminder carregado com sucesso, seja bem vindo.');
 })();
