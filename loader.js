@@ -1,23 +1,9 @@
-// ==UserScript==
-// @name         Whats Reminder
-// @namespace    https://github.com/raibmartins
-// @version      1.1.0
-// @description  Loader dinâmico do WhatsApp Reminder
-
-// @updateURL    https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/user.js
-// @downloadURL  https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/user.js
-
-// @match        https://web.whatsapp.com/*
-
-// @grant        GM_xmlhttpRequest
-// @connect      raw.githubusercontent.com
-// ==/UserScript==
-
 (function () {
     'use strict';
 
     const scripts = [
-        'https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/loader.js',
+        'https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/janela.js',
+        'https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/botao.js'
     ];
 
     function loadScript(url) {

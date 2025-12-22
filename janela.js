@@ -139,7 +139,7 @@
         header.style.borderBottom = '1px solid rgba(0,0,0,0.1)';
 
         const title = document.createElement('span');
-        title.innerText = 'Lembrete 📅';
+        title.innerText = 'Lembretes 📅';
         title.style.fontWeight = '500';
         title.style.fontSize = '16px';
 
