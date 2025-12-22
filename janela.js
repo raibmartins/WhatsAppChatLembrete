@@ -110,7 +110,7 @@
         header.style.alignItems = 'center';
 
         const title = document.createElement('span');
-        title.innerText = 'Lembrete 📅';
+        title.innerText = 'Lembretess 📅';
 
         const toggleBtn = document.createElement('span');
         toggleBtn.innerText = '-';
