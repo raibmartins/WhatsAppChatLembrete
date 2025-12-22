@@ -4,13 +4,13 @@
 // @version      1.0.0
 // @description  Loader fixo do WhatsApp Reminder
 
-// @updateURL    https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize/user.js
-// @downloadURL  https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize/user.js
+// @updateURL    https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/user.js
+// @downloadURL  https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/user.js
 
 // @match        https://web.whatsapp.com/*
 
-// @require      https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize/janela.js
-// @require      https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize/botao.js
+// @require      https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/janela.js
+// @require      https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/botao.js
 // @grant        none
 // ==/UserScript==
 
