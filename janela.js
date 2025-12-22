@@ -13,6 +13,7 @@
 
     const STORAGE_KEY = 'clientes_lembretes';
     const WINDOW_SIZE_KEY = 'janela_tamanho';
+    const THEME_KEY = 'janela_tema';
     let clientes = [];
 
     function salvarClientes() {
@@ -44,6 +45,14 @@
             }
         }
         return null;
+    }
+
+    function salvarTema(tema) {
+        localStorage.setItem(THEME_KEY, tema);
+    }
+
+    function carregarTema() {
+        return localStorage.getItem(THEME_KEY) || 'dark';
     }
 
     function parseData(dataStr) {
@@ -84,7 +93,28 @@
         iniciado = true;
 
         const tamanho = carregarTamanhoJanela() || { largura: 500, altura: 400 };
+        let temaAtual = carregarTema();
 
+        const themes = {
+            dark: {
+                bg: '#111b21',
+                header: '#202c33',
+                text: '#e9edef',
+                secondaryText: '#8696a0',
+                cardBg: '#111b21',
+                cardBorder: '#222d34',
+                shadow: 'rgba(0,0,0,0.5)'
+            },
+            light: {
+                bg: '#ffffff',
+                header: '#00a884',
+                text: '#111b21',
+                secondaryText: '#667781',
+                cardBg: '#ffffff',
+                cardBorder: '#e9edef',
+                shadow: 'rgba(0,0,0,0.1)'
+            }
+        };
         const box = document.createElement('div');
         box.id = 'floatingTodoBox';
         box.style.position = 'fixed';
@@ -92,92 +122,141 @@
         box.style.right = '20px';
         box.style.width = tamanho.largura + 'px';
         box.style.height = tamanho.altura + 'px';
-        box.style.background = '#111';
-        box.style.color = '#fff';
         box.style.borderRadius = '12px';
-        box.style.boxShadow = '0 5px 20px rgba(0,0,0,0.4)';
-        box.style.fontFamily = 'Arial, sans-serif';
+        box.style.boxShadow = `0 5px 20px ${themes[temaAtual].shadow}`;
+        box.style.fontFamily = 'Segoe UI, Helvetica Neue, Helvetica, Lucida Grande, Arial, Ubuntu, Cantarell, Fira Sans, sans-serif';
         box.style.zIndex = '9999';
         box.style.userSelect = 'none';
-        box.style.overflow = 'hidden'; // Para evitar overflow durante resize
+        box.style.overflow = 'hidden';
+        box.style.transition = 'background 0.3s, color 0.3s, height 0.3s ease-in-out';
 
         const header = document.createElement('div');
-        header.style.background = '#222';
-        header.style.padding = '10px';
+        header.style.padding = '12px 16px';
         header.style.cursor = 'move';
         header.style.display = 'flex';
         header.style.justifyContent = 'space-between';
         header.style.alignItems = 'center';
+        header.style.borderBottom = '1px solid rgba(0,0,0,0.1)';
 
         const title = document.createElement('span');
         title.innerText = 'Lembrete 📅';
+        title.style.fontWeight = '500';
+        title.style.fontSize = '16px';
+
+        const controls = document.createElement('div');
+        controls.style.display = 'flex';
+        controls.style.gap = '15px';
+        controls.style.alignItems = 'center';
+
+        const themeBtn = document.createElement('span');
+        themeBtn.innerText = temaAtual === 'dark' ? '☀️' : '🌙';
+        themeBtn.style.cursor = 'pointer';
+        themeBtn.style.fontSize = '14px';
+        themeBtn.title = 'Alternar Tema';
 
         const toggleBtn = document.createElement('span');
         toggleBtn.innerText = '-';
         toggleBtn.style.cursor = 'pointer';
-        toggleBtn.style.fontSize = '26px';
+        toggleBtn.style.fontSize = '24px';
+        toggleBtn.style.lineHeight = '1';
 
+        controls.appendChild(themeBtn);
+        controls.appendChild(toggleBtn);
         header.appendChild(title);
-        header.appendChild(toggleBtn);
+        header.appendChild(controls);
+
+        const applyTheme = (tema) => {
+            const colors = themes[tema];
+            box.style.background = colors.bg;
+            box.style.color = colors.text;
+            header.style.background = colors.header;
+            header.style.color = tema === 'light' ? '#ffffff' : colors.text; // Texto branco no header verde
+            box.style.boxShadow = `0 5px 20px ${colors.shadow}`;
+            themeBtn.innerText = tema === 'dark' ? '☀️' : '🌙';
+            renderClientes();
+        };
+
+        themeBtn.onclick = () => {
+            temaAtual = temaAtual === 'dark' ? 'light' : 'dark';
+            salvarTema(temaAtual);
+            applyTheme(temaAtual);
+        };
 
         const content = document.createElement('div');
         content.style.padding = '10px';
         content.id = 'clientesList';
-        content.style.padding = '10px';
-        content.style.maxHeight = 'calc(100% - 50px)'; // Ajustar para altura dinâmica
-        content.style.overflow = 'auto';
+        content.style.maxHeight = 'calc(100% - 50px)';
+        content.style.overflowY = 'auto';
+        content.style.overflowX = 'hidden';
+
+        // Estilo da scrollbar para parecer com o WhatsApp
+        const style = document.createElement('style');
+        style.innerHTML = `
+            #clientesList::-webkit-scrollbar {
+                width: 6px;
+            }
+            #clientesList::-webkit-scrollbar-thumb {
+                background: rgba(128, 128, 128, 0.2);
+                border-radius: 10px;
+            }
+            #clientesList::-webkit-scrollbar-thumb:hover {
+                background: rgba(128, 128, 128, 0.3);
+            }
+        `;
+        document.head.appendChild(style);
 
         // Handle de redimensionamento
         const resizeHandleBL = document.createElement('div'); // Bottom-Left
         resizeHandleBL.style.position = 'absolute';
         resizeHandleBL.style.bottom = '0';
         resizeHandleBL.style.left = '0';
-        resizeHandleBL.style.width = '20px';
-        resizeHandleBL.style.height = '20px';
+        resizeHandleBL.style.width = '15px';
+        resizeHandleBL.style.height = '15px';
         resizeHandleBL.style.cursor = 'nw-resize';
         resizeHandleBL.style.background = 'transparent';
-        resizeHandleBL.style.borderBottom = '2px solid #555';
-        resizeHandleBL.style.borderLeft = '2px solid #555';
+        resizeHandleBL.style.borderBottom = '2px solid rgba(128,128,128,0.3)';
+        resizeHandleBL.style.borderLeft = '2px solid rgba(128,128,128,0.3)';
 
         const resizeHandleBR = document.createElement('div'); // Bottom-Right
         resizeHandleBR.style.position = 'absolute';
         resizeHandleBR.style.bottom = '0';
         resizeHandleBR.style.right = '0';
-        resizeHandleBR.style.width = '20px';
-        resizeHandleBR.style.height = '20px';
+        resizeHandleBR.style.width = '15px';
+        resizeHandleBR.style.height = '15px';
         resizeHandleBR.style.cursor = 'ne-resize';
         resizeHandleBR.style.background = 'transparent';
-        resizeHandleBR.style.borderBottom = '2px solid #555';
-        resizeHandleBR.style.borderRight = '2px solid #555';
+        resizeHandleBR.style.borderBottom = '2px solid rgba(128,128,128,0.3)';
+        resizeHandleBR.style.borderRight = '2px solid rgba(128,128,128,0.3)';
 
         const resizeHandleTL = document.createElement('div'); // Top-Left
         resizeHandleTL.style.position = 'absolute';
         resizeHandleTL.style.top = '0';
         resizeHandleTL.style.left = '0';
-        resizeHandleTL.style.width = '20px';
-        resizeHandleTL.style.height = '20px';
+        resizeHandleTL.style.width = '15px';
+        resizeHandleTL.style.height = '15px';
         resizeHandleTL.style.cursor = 'sw-resize';
         resizeHandleTL.style.background = 'transparent';
-        resizeHandleTL.style.borderTop = '2px solid #555';
-        resizeHandleTL.style.borderLeft = '2px solid #555';
+        resizeHandleTL.style.borderTop = '2px solid rgba(128,128,128,0.3)';
+        resizeHandleTL.style.borderLeft = '2px solid rgba(128,128,128,0.3)';
 
         const resizeHandleTR = document.createElement('div'); // Top-Right
         resizeHandleTR.style.position = 'absolute';
         resizeHandleTR.style.top = '0';
         resizeHandleTR.style.right = '0';
-        resizeHandleTR.style.width = '20px';
-        resizeHandleTR.style.height = '20px';
+        resizeHandleTR.style.width = '15px';
+        resizeHandleTR.style.height = '15px';
         resizeHandleTR.style.cursor = 'se-resize';
         resizeHandleTR.style.background = 'transparent';
-        resizeHandleTR.style.borderTop = '2px solid #555';
-        resizeHandleTR.style.borderRight = '2px solid #555';
+        resizeHandleTR.style.borderTop = '2px solid rgba(128,128,128,0.3)';
+        resizeHandleTR.style.borderRight = '2px solid rgba(128,128,128,0.3)';
 
         // ===== RENDER =====
         function renderClientes() {
             content.innerHTML = '';
+            const colors = themes[temaAtual];
 
             if (clientes.length === 0) {
-                content.innerHTML = `<div style="color:#777;font-size:12px;">Nenhum lembrete</div>`;
+                content.innerHTML = `<div style="color:${colors.secondaryText};font-size:13px;text-align:center;margin-top:20px;">Nenhum lembrete</div>`;
                 return;
             }
 
@@ -187,20 +266,21 @@
 
             clientesOrdenados.forEach((cliente) => {
                 const card = document.createElement('div');
-                card.style.background = '#1c1c1c';
-                card.style.border = '1px solid #333';
-                card.style.borderRadius = '10px';
-                card.style.padding = '10px';
-                card.style.marginBottom = '8px';
+                card.style.background = colors.cardBg;
+                card.style.border = `1px solid ${colors.cardBorder}`;
+                card.style.borderRadius = '8px';
+                card.style.padding = '12px';
+                card.style.marginBottom = '10px';
                 card.style.position = 'relative';
                 card.style.display = 'flex';
-                card.style.gap = '10px';
+                card.style.gap = '12px';
                 card.style.alignItems = 'center';
+                card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
 
                 // ==== FOTO ====
                 const foto = document.createElement('img');
-                foto.style.width = '40px';
-                foto.style.height = '40px';
+                foto.style.width = '45px';
+                foto.style.height = '45px';
                 foto.style.borderRadius = '50%';
                 foto.style.objectFit = 'cover';
                 foto.style.flexShrink = '0';
@@ -209,7 +289,7 @@
                 if (fotoSrc) {
                     foto.src = fotoSrc;
                 } else {
-                    foto.src = 'https://via.placeholder.com/40';
+                    foto.src = 'https://via.placeholder.com/45';
                 }
 
                 // ==== CONTEÚDO ====
@@ -218,28 +298,31 @@
 
                 const nome = document.createElement('div');
                 nome.innerText = cliente.nome;
-                nome.style.fontWeight = 'bold';
+                nome.style.fontWeight = '500';
                 nome.style.marginBottom = '2px';
-                nome.style.fontSize = '14px';
+                nome.style.fontSize = '15px';
+                nome.style.color = colors.text;
 
                 const data = document.createElement('div');
                 data.innerText = '📆 ' + cliente.data;
-                data.style.color = '#aaa';
+                data.style.color = colors.secondaryText;
                 data.style.fontSize = '12px';
 
                 const motivo = document.createElement('div');
-                motivo.innerText = '📝 ' + (cliente.motivo || '');
-                motivo.style.color = '#bbb';
-                motivo.style.fontSize = '12px';
+                motivo.innerText = (cliente.motivo || '');
+                motivo.style.color = colors.secondaryText;
+                motivo.style.fontSize = '13px';
                 motivo.style.marginTop = '4px';
+                motivo.style.lineHeight = '1.4';
 
                 const removeBtn = document.createElement('span');
                 removeBtn.innerText = '✖';
                 removeBtn.style.position = 'absolute';
-                removeBtn.style.top = '6px';
-                removeBtn.style.right = '8px';
+                removeBtn.style.top = '10px';
+                removeBtn.style.right = '12px';
                 removeBtn.style.cursor = 'pointer';
-                removeBtn.style.color = '#f55';
+                removeBtn.style.color = '#f15c6d';
+                removeBtn.style.fontSize = '24px';
                 removeBtn.title = 'Remover';
 
                 removeBtn.onclick = () => {
@@ -292,7 +375,8 @@
             minimized = !minimized;
             if (minimized) {
                 content.style.display = 'none';
-                box.style.height = '50px'; // Altura mínima para o header
+                box.style.height = '45px'; // Altura compacta para o header
+                themeBtn.style.display = 'none';
                 resizeHandleBL.style.display = 'none';
                 resizeHandleBR.style.display = 'none';
                 resizeHandleTL.style.display = 'none';
@@ -301,6 +385,7 @@
                 const tamanho = carregarTamanhoJanela() || { largura: 500, altura: 400 };
                 box.style.height = tamanho.altura + 'px';
                 content.style.display = 'block';
+                themeBtn.style.display = 'block';
                 resizeHandleBL.style.display = 'block';
                 resizeHandleBR.style.display = 'block';
                 resizeHandleTL.style.display = 'block';
@@ -315,7 +400,7 @@
         let offsetY = 0;
 
         header.addEventListener('mousedown', (e) => {
-            if (e.target === toggleBtn) return; // Não iniciar drag se clicar no botão de toggle
+            if (e.target === toggleBtn || e.target === themeBtn) return; // Não iniciar drag se clicar nos botões
             isDragging = true;
             const rect = box.getBoundingClientRect();
             offsetX = e.clientX - rect.left;
@@ -356,6 +441,10 @@
         let startHeight = 0;
         let startLeft = 0;
         let startTop = 0;
+        let previousTransition = '';
+        let rafPending = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
 
         function startResize(e, direction) {
             isResizing = true;
@@ -366,6 +455,12 @@
             startHeight = box.offsetHeight;
             startLeft = box.offsetLeft;
             startTop = box.offsetTop;
+            // Desabilita transições para evitar animações encadeadas durante o resize
+            previousTransition = box.style.transition || '';
+            box.style.transition = 'none';
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            rafPending = false;
             e.preventDefault();
         }
 
@@ -374,16 +469,16 @@
         resizeHandleTL.addEventListener('mousedown', (e) => startResize(e, 'tl'));
         resizeHandleTR.addEventListener('mousedown', (e) => startResize(e, 'tr'));
 
-        document.addEventListener('mousemove', (e) => {
-            if (!isResizing) return;
+        function resizeFrame() {
+            rafPending = false;
 
             let newWidth = startWidth;
             let newHeight = startHeight;
             let newLeft = startLeft;
             let newTop = startTop;
 
-            const deltaX = e.clientX - startX;
-            const deltaY = e.clientY - startY;
+            const deltaX = lastMouseX - startX;
+            const deltaY = lastMouseY - startY;
 
             if (resizeDirection.includes('l')) {
                 newWidth = startWidth - deltaX;
@@ -416,13 +511,36 @@
                     box.style.top = newTop + 'px';
                 }
             }
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            if (!rafPending) {
+                rafPending = true;
+                requestAnimationFrame(resizeFrame);
+            }
         });
 
         document.addEventListener('mouseup', () => {
             if (isResizing) {
-                salvarTamanhoJanela(box.offsetWidth, box.offsetHeight);
-                isResizing = false;
-                resizeDirection = null;
+                // garante que última atualização foi aplicada
+                if (rafPending) {
+                    // aguarda o próximo frame e depois grava
+                    requestAnimationFrame(() => {
+                        salvarTamanhoJanela(box.offsetWidth, box.offsetHeight);
+                        isResizing = false;
+                        resizeDirection = null;
+                        box.style.transition = previousTransition || 'background 0.3s, color 0.3s';
+                        rafPending = false;
+                    });
+                } else {
+                    salvarTamanhoJanela(box.offsetWidth, box.offsetHeight);
+                    isResizing = false;
+                    resizeDirection = null;
+                    box.style.transition = previousTransition || 'background 0.3s, color 0.3s';
+                }
             }
         });
 
@@ -434,6 +552,6 @@
         box.appendChild(resizeHandleTR);
         document.body.appendChild(box);
 
-        renderClientes();
+        applyTheme(temaAtual);
     }
 })();
