@@ -83,15 +83,9 @@
             <div class="x1c4vz4f xs83m0k xdl72j9 x1g77sc7 x78zum5 xozqiw3 x1oa3qoh x12fk4p8 x2lwn1j x1nhvcw1 x1q0g3np x6s0dn4 x1ypdohk x5w4yej x1vqgdyp xh8yej3">
                 <div class="x1c4vz4f xs83m0k xdl72j9 x1g77sc7 x78zum5 xozqiw3 x1oa3qoh x12fk4p8 x2lwn1j xl56j7k x1q0g3np x1cy8zhl xt4ypqs x13fj5qh x1sa5p1d">
                     <span aria-hidden="true">
-                        <svg width="24" height="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="50" cy="50" r="45" stroke="black" stroke-width="3" fill="white"/>
-                            <line x1="50" y1="10" x2="50" y2="20" stroke="black" stroke-width="2"/>
-                            <line x1="90" y1="50" x2="80" y2="50" stroke="black" stroke-width="2"/>
-                            <line x1="50" y1="90" x2="50" y2="80" stroke="black" stroke-width="2"/>
-                            <line x1="10" y1="50" x2="20" y2="50" stroke="black" stroke-width="2"/>
-                            <line x1="50" y1="50" x2="30" y2="30" stroke="red" stroke-width="4" stroke-linecap="round"/>
-                            <line x1="50" y1="50" x2="40" y2="25" stroke="blue" stroke-width="3" stroke-linecap="round"/>
-                            <circle cx="50" cy="50" r="3" fill="black"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #8696a0;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
                     </span>
                 </div>

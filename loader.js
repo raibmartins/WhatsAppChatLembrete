@@ -9,12 +9,14 @@
     function loadScript(url) {
         return new Promise((resolve, reject) => {
             console.log(`[WhatsReminder] Baixando: ${url}`);
-            GM_xmlhttpRequest({
-                method: "GET",
-                url: url + "?t=" + new Date().getTime(),
-                onload: function (response) {
+            fetch(url + "?t=" + new Date().getTime())
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.text();
+                })
+                .then(responseText => {
                     try {
-                        const blob = new Blob([response.responseText], { type: 'text/javascript' });
+                        const blob = new Blob([responseText], { type: 'text/javascript' });
                         const blobUrl = URL.createObjectURL(blob);
                         const script = document.createElement('script');
                         script.src = blobUrl;
@@ -32,12 +34,11 @@
                         console.error(`[WhatsReminder] Erro ao processar script ${url}:`, e);
                         reject(e);
                     }
-                },
-                onerror: function (err) {
+                })
+                .catch(err => {
                     console.error(`[WhatsReminder] Erro de rede ao baixar ${url}:`, err);
                     reject(err);
-                }
-            });
+                });
         });
     }
 

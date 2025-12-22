@@ -188,6 +188,9 @@
         content.style.maxHeight = 'calc(100% - 50px)';
         content.style.overflowY = 'auto';
         content.style.overflowX = 'hidden';
+        content.style.display = 'grid';
+        content.style.gridTemplateColumns = 'repeat(auto-fill, minmax(140px, 1fr))';
+        content.style.gap = '10px';
 
         // Estilo da scrollbar para parecer com o WhatsApp
         const style = document.createElement('style');
@@ -256,7 +259,7 @@
             const colors = themes[temaAtual];
 
             if (clientes.length === 0) {
-                content.innerHTML = `<div style="color:${colors.secondaryText};font-size:13px;text-align:center;margin-top:20px;">Nenhum lembrete</div>`;
+                content.innerHTML = `<div style="color:${colors.secondaryText};font-size:13px;text-align:center;margin-top:20px;grid-column: 1 / -1;">Nenhum lembrete</div>`;
                 return;
             }
 
@@ -270,17 +273,18 @@
                 card.style.border = `1px solid ${colors.cardBorder}`;
                 card.style.borderRadius = '8px';
                 card.style.padding = '12px';
-                card.style.marginBottom = '10px';
                 card.style.position = 'relative';
                 card.style.display = 'flex';
-                card.style.gap = '12px';
+                card.style.flexDirection = 'column';
+                card.style.gap = '8px';
                 card.style.alignItems = 'center';
+                card.style.textAlign = 'center';
                 card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
 
                 // ==== FOTO ====
                 const foto = document.createElement('img');
-                foto.style.width = '45px';
-                foto.style.height = '45px';
+                foto.style.width = '50px';
+                foto.style.height = '50px';
                 foto.style.borderRadius = '50%';
                 foto.style.objectFit = 'cover';
                 foto.style.flexShrink = '0';
@@ -289,40 +293,48 @@
                 if (fotoSrc) {
                     foto.src = fotoSrc;
                 } else {
-                    foto.src = 'https://via.placeholder.com/45';
+                    foto.src = 'https://via.placeholder.com/50';
                 }
 
                 // ==== CONTEÚDO ====
                 const info = document.createElement('div');
-                info.style.flex = '1';
+                info.style.width = '100%';
 
                 const nome = document.createElement('div');
                 nome.innerText = cliente.nome;
-                nome.style.fontWeight = '500';
-                nome.style.marginBottom = '2px';
-                nome.style.fontSize = '15px';
+                nome.style.fontWeight = '600';
+                nome.style.marginBottom = '4px';
+                nome.style.fontSize = '14px';
                 nome.style.color = colors.text;
+                nome.style.whiteSpace = 'nowrap';
+                nome.style.overflow = 'hidden';
+                nome.style.textOverflow = 'ellipsis';
 
                 const data = document.createElement('div');
-                data.innerText = '📆 ' + cliente.data;
+                data.innerText = cliente.data;
                 data.style.color = colors.secondaryText;
-                data.style.fontSize = '12px';
+                data.style.fontSize = '11px';
 
                 const motivo = document.createElement('div');
                 motivo.innerText = (cliente.motivo || '');
                 motivo.style.color = colors.secondaryText;
+                motivo.title = cliente.motivo || '';
                 motivo.style.fontSize = '13px';
                 motivo.style.marginTop = '4px';
-                motivo.style.lineHeight = '1.4';
+                motivo.style.lineHeight = '1.2';
+                motivo.style.display = '-webkit-box';
+                motivo.style.webkitLineClamp = '2';
+                motivo.style.webkitBoxOrient = 'vertical';
+                motivo.style.overflow = 'hidden';
 
                 const removeBtn = document.createElement('span');
-                removeBtn.innerText = '✖';
+                removeBtn.innerText = '×';
                 removeBtn.style.position = 'absolute';
-                removeBtn.style.top = '10px';
-                removeBtn.style.right = '12px';
+                removeBtn.style.top = '4px';
+                removeBtn.style.right = '8px';
                 removeBtn.style.cursor = 'pointer';
                 removeBtn.style.color = '#f15c6d';
-                removeBtn.style.fontSize = '24px';
+                removeBtn.style.fontSize = '18px';
                 removeBtn.title = 'Remover';
 
                 removeBtn.onclick = () => {
@@ -384,7 +396,7 @@
             } else {
                 const tamanho = carregarTamanhoJanela() || { largura: 500, altura: 400 };
                 box.style.height = tamanho.altura + 'px';
-                content.style.display = 'block';
+                content.style.display = 'grid';
                 themeBtn.style.display = 'block';
                 resizeHandleBL.style.display = 'block';
                 resizeHandleBR.style.display = 'block';
