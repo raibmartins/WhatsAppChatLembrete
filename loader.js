@@ -47,6 +47,7 @@
                 await loadScript(url);
             } catch (e) {
                 console.error(`[WhatsReminder] Falha crítica ao carregar ${url}. Interrompendo.`);
+                console.error(e);
                 break;
             }
         }
