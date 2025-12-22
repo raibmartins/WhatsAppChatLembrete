@@ -17,7 +17,8 @@
     'use strict';
 
     const scripts = [
-        'https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/loader.js',
+        'https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/janela.js',
+        'https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/botao.js'
     ];
 
     function loadScript(url) {
