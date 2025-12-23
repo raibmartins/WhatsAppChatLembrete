@@ -16,10 +16,32 @@
 (function () {
     'use strict';
 
-    const scripts = [
-        'https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/janela.js',
-        'https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/botao.js'
-    ];
+    const SCRIPTS_LIST_URL = 'https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/scripts.json';
+
+    function fetchScriptList() {
+        return new Promise((resolve, reject) => {
+            console.log(`[WhatsReminder] Buscando lista de scripts: ${SCRIPTS_LIST_URL}`);
+            GM_xmlhttpRequest({
+                method: "GET",
+                url: SCRIPTS_LIST_URL + "?t=" + new Date().getTime(),
+                onload: function (response) {
+                    try {
+                        const list = JSON.parse(response.responseText);
+                        if (Array.isArray(list)) {
+                            resolve(list);
+                        } else {
+                            reject(new Error("Formato de lista inválido"));
+                        }
+                    } catch (e) {
+                        reject(e);
+                    }
+                },
+                onerror: function (err) {
+                    reject(err);
+                }
+            });
+        });
+    }
 
     function loadScript(url) {
         return new Promise((resolve, reject) => {
@@ -57,13 +79,17 @@
     }
 
     async function init() {
-        for (const url of scripts) {
-            try {
-                await loadScript(url);
-            } catch (e) {
-                console.error(`[WhatsReminder] Falha crítica ao carregar ${url}. Interrompendo.`);
-                break;
+        try {
+            const scripts = await fetchScriptList();
+            for (const url of scripts) {
+                try {
+                    await loadScript(url);
+                } catch (e) {
+                    console.error(`[WhatsReminder] Falha ao carregar script individual ${url}:`, e);
+                }
             }
+        } catch (e) {
+            console.error(`[WhatsReminder] Falha crítica ao buscar lista de scripts:`, e);
         }
         console.log('[WhatsReminder] Processo de carregamento finalizado');
     }
