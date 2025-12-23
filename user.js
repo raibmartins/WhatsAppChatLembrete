@@ -4,8 +4,8 @@
 // @version      1.1.0
 // @description  Loader dinâmico do WhatsApp Reminder
 
-// @updateURL    https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/user.js
-// @downloadURL  https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/user.js
+// @updateURL    https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/main/user.js
+// @downloadURL  https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/main/user.js
 
 // @match        https://web.whatsapp.com/*
 
@@ -16,7 +16,7 @@
 (function () {
     'use strict';
 
-    const SCRIPTS_LIST_URL = 'https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/resize2/scripts.json';
+    const SCRIPTS_LIST_URL = 'https://raw.githubusercontent.com/raibmartins/WhatsAppChatLembrete/main/scripts.json';
 
     function fetchScriptList() {
         return new Promise((resolve, reject) => {
