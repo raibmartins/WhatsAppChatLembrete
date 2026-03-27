@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Botão de lembrete
 // @namespace    http://tampermonkey.net/
-// @version      1.7
+// @version      1.8
 // @description  Injeta opção "Marcar lembrete" com Toast grande + datepicker corrigido
 // @match        https://web.whatsapp.com/*
 // @grant        none
@@ -9,7 +9,7 @@
 
 (function () {
     'use strict';
-    console.log('Script botao.js carregado na versão 1.7!');
+    console.log('Script botao.js carregado na versão 1.8!');
 
     injectReminderOption();
 
