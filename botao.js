@@ -11,9 +11,7 @@
     'use strict';
     console.log('Script botao.js carregado na versão 1.7!');
 
-    window.addEventListener('contextmenu', () => {
-        setTimeout(injectReminderOption, 80);
-    }, true);
+    injectReminderOption();
 
     function showToast(message) {
         if (document.querySelector('#tm-toast')) return;
