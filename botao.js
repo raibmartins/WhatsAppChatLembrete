@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Botão de lembrete
 // @namespace    http://tampermonkey.net/
-// @version      1.8
+// @version      1.9
 // @description  Injeta opção "Marcar lembrete" com Toast grande + datepicker corrigido
 // @match        https://web.whatsapp.com/*
 // @grant        none
@@ -9,9 +9,18 @@
 
 (function () {
     'use strict';
-    console.log('Script botao.js carregado na versão 1.8!');
+    console.log('Iniciando script de lembrete versão 1.9...');
 
-    injectReminderOption();
+    const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+                if (node.nodeType !== 1) continue;
+                const menu = node.matches('[role="menu"]') ? node : node.querySelector('[role="menu"]');
+                if (menu) injectReminderOption(menu);
+            }
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
 
     function showToast(message) {
         if (document.querySelector('#tm-toast')) return;
@@ -64,42 +73,41 @@
         return img.src;
     }
 
-    function injectReminderOption() {
-        console.log('injectReminderOption')
-        const menuContainer = document.querySelector('div[role="grid"] div');
-        if (!menuContainer) {
-            setTimeout(injectReminderOption, 1000);
-            return;
-        };
-        if (menuContainer.querySelector('[data-reminder="true"]')) return;
-        console.log(menuContainer);
+    function injectReminderOption(menu) {
+        if (!menu) return;
+        if (menu.querySelector('[data-reminder="true"]')) return;
 
-        const wrapper = document.createElement('div');
+        // Encontrar o container dos menuitems dentro do menu
+        const itemsContainer = menu.querySelector('[role="menuitem"]')?.parentElement;
+        if (!itemsContainer) return;
 
-        const li = document.createElement('li');
-        li.setAttribute('tabindex', '0');
-        li.setAttribute('role', 'button');
-        li.setAttribute('data-reminder', 'true');
-        li.className = '_aj-r _aj-q _aj-_ _asi6 _ap51 false';
-        li.style.opacity = '1';
+        const menuItem = document.createElement('div');
+        menuItem.setAttribute('aria-label', 'Marcar lembrete');
+        menuItem.setAttribute('role', 'menuitem');
+        menuItem.setAttribute('tabindex', '-1');
+        menuItem.setAttribute('data-reminder', 'true');
 
-        li.innerHTML = `
-            <div class="x1c4vz4f xs83m0k xdl72j9 x1g77sc7 x78zum5 xozqiw3 x1oa3qoh x12fk4p8 x2lwn1j x1nhvcw1 x1q0g3np x6s0dn4 x1ypdohk x5w4yej x1vqgdyp xh8yej3">
-                <div class="x1c4vz4f xs83m0k xdl72j9 x1g77sc7 x78zum5 xozqiw3 x1oa3qoh x12fk4p8 x2lwn1j xl56j7k x1q0g3np x1cy8zhl xt4ypqs x13fj5qh x1sa5p1d">
+        // Copiar classes de um menuitem existente
+        const existingItem = menu.querySelector('[role="menuitem"]');
+        if (existingItem) menuItem.className = existingItem.className;
+
+        menuItem.innerHTML = `
+            <div class="x6s0dn4 xlr9sxt xvvg52n xwd4zgb xq8v1ta x78zum5 xu0aao5 xh8yej3">
+                <div class="x6s0dn4 x78zum5 x8lyb6r xl56j7k x14ju556 x1xvr5cs x12w63v0 x1nzty39">
                     <span aria-hidden="true">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #8696a0;">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
+                        <svg viewBox="0 0 24 24" height="18" width="18" preserveAspectRatio="xMidYMid meet" fill="currentColor">
+                            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                            <polyline points="12 6 12 12 16 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
                         </svg>
                     </span>
                 </div>
-                <span class="x1o2sk6j x6prxxf x6ikm8r x10wlt62 xlyipyv xuxw1ft xpwdb9g">
-                    Marcar lembrete
-                </span>
+                <div class="x78zum5 xdt5ytf x1iyjqo2 xeuugli x6ikm8r x10wlt62 xde1mab">
+                    <span class="x140p0ai x1gufx9m x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x193iq5w xeuugli x13faqbe x1vvkbs x1lliihq x1fj9vlw x14ug900 x87ps6o x1f6kntn xjb2p0i x8r4c90 xo1l8bm x1ic7a3i x12xpedu" style="--x-fontSize: 14px; --x-lineHeight: 9.9531px; --x-8dd7yt: -0.0137em; --x-hxtmnb: 0.0137em;">Marcar lembrete</span>
+                </div>
             </div>
         `;
 
-        li.addEventListener('click', () => {
+        menuItem.addEventListener('click', () => {
 
             if (document.querySelector('div[aria-selected="true"]') == null) {
                 showToast('Entre na conversa com o cliente para gerar um lembrete');
@@ -224,8 +232,7 @@
             };
         });
 
-        wrapper.appendChild(li);
-        menuContainer.appendChild(wrapper);
+        itemsContainer.appendChild(menuItem);
     }
 
 })();
