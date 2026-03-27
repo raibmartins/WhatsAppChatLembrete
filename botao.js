@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Botão de lembrete
 // @namespace    http://tampermonkey.net/
-// @version      1.7
+// @version      1.8
 // @description  Injeta opção "Marcar lembrete" com Toast grande + datepicker corrigido
 // @match        https://web.whatsapp.com/*
 // @grant        none
@@ -9,10 +9,13 @@
 
 (function () {
     'use strict';
-
-    window.addEventListener('contextmenu', () => {
-        setTimeout(injectReminderOption, 80);
-    }, true);
+    console.log('Iniciando script botao.js versão 1.8...');
+    const REMINDER_ATTR = 'data-reminder';
+    let lastContextTarget = null;
+    let lastContextPoint = { x: 0, y: 0 };
+    let scanTimer = null;
+    let menuObserver = null;
+    let menuObserverTimer = null;
 
     function showToast(message) {
         if (document.querySelector('#tm-toast')) return;
@@ -49,37 +52,97 @@
         }, 2500);
     }
 
-    function getNomeContatoAtual() {
-        const selecionado = document.querySelector('div[aria-selected="true"]');
-        if (!selecionado) return null;
-        const nomeSpan = selecionado.querySelector('span[title]');
-        if (!nomeSpan) return null;
-        return nomeSpan.getAttribute('title');
+    function getElementText(element) {
+        if (!element) return '';
+        return (element.getAttribute('title') || element.textContent || '').trim();
     }
 
-    function getFotoContatoAtual() {
-        const selecionado = document.querySelector('div[aria-selected="true"]');
-        if (!selecionado) return null;
-        const img = selecionado.querySelector('img');
-        if (!img) return null;
-        return img.src;
+    function isVisible(element) {
+        if (!element || !(element instanceof Element)) return false;
+        const rect = element.getBoundingClientRect();
+        if (!rect.width || !rect.height) return false;
+        const style = window.getComputedStyle(element);
+        return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
     }
 
-    function injectReminderOption() {
-        const menuContainer = document.querySelector('div[role="application"] ul > div');
-        if (!menuContainer) return;
-        if (menuContainer.querySelector('[data-reminder="true"]')) return;
+    function getNomeContatoAtualFromTarget(target) {
+        if (!target || !(target instanceof Element)) return null;
 
-        const wrapper = document.createElement('div');
+        const selectors = [
+            'header span[title]',
+            '[data-testid="conversation-info-header-chat-title"] span[title]',
+            'span[title]'
+        ].join(', ');
 
-        const li = document.createElement('li');
-        li.setAttribute('tabindex', '0');
-        li.setAttribute('role', 'button');
-        li.setAttribute('data-reminder', 'true');
-        li.className = '_aj-r _aj-q _aj-_ _asi6 _ap51 false';
-        li.style.opacity = '1';
+        let current = target;
+        while (current && current !== document.body) {
+            const titleNode = current.matches('span[title]') ? current : current.querySelector(selectors);
+            const nome = getElementText(titleNode);
+            if (nome) return nome;
+            current = current.parentElement;
+        }
 
-        li.innerHTML = `
+        return null;
+    }
+
+    function getFotoContatoAtualFromTarget(target) {
+        if (!target || !(target instanceof Element)) return null;
+
+        let current = target;
+        while (current && current !== document.body) {
+            const img = current.querySelector('img');
+            if (img && img.src) return img.src;
+            current = current.parentElement;
+        }
+
+        const headerImg = document.querySelector('header img');
+        return headerImg ? headerImg.src : null;
+    }
+
+    function getContatoAtual() {
+        const fromContextTarget = getNomeContatoAtualFromTarget(lastContextTarget);
+        if (fromContextTarget) {
+            return {
+                nome: fromContextTarget,
+                foto: getFotoContatoAtualFromTarget(lastContextTarget)
+            };
+        }
+
+        const selecionado = document.querySelector('div[aria-selected="true"], [role="row"][aria-selected="true"], [role="gridcell"][aria-selected="true"]');
+        if (selecionado) {
+            const nome = getNomeContatoAtualFromTarget(selecionado);
+            if (nome) {
+                return {
+                    nome,
+                    foto: getFotoContatoAtualFromTarget(selecionado)
+                };
+            }
+        }
+
+        const headerNome = getElementText(document.querySelector('header span[title], [data-testid="conversation-info-header-chat-title"] span[title]'));
+        if (headerNome) {
+            return {
+                nome: headerNome,
+                foto: getFotoContatoAtualFromTarget(document.querySelector('header') || document.body)
+            };
+        }
+
+        return null;
+    }
+
+    function buildReminderItem(referenceElement) {
+        const itemTag = referenceElement && referenceElement.tagName ? referenceElement.tagName.toLowerCase() : 'li';
+        const item = document.createElement(itemTag);
+        item.setAttribute(REMINDER_ATTR, 'true');
+        item.setAttribute('role', 'button');
+        item.setAttribute('tabindex', '0');
+        item.style.opacity = '1';
+
+        if (referenceElement && referenceElement.className) {
+            item.className = referenceElement.className;
+        }
+
+        item.innerHTML = `
             <div class="x1c4vz4f xs83m0k xdl72j9 x1g77sc7 x78zum5 xozqiw3 x1oa3qoh x12fk4p8 x2lwn1j x1nhvcw1 x1q0g3np x6s0dn4 x1ypdohk x5w4yej x1vqgdyp xh8yej3">
                 <div class="x1c4vz4f xs83m0k xdl72j9 x1g77sc7 x78zum5 xozqiw3 x1oa3qoh x12fk4p8 x2lwn1j xl56j7k x1q0g3np x1cy8zhl xt4ypqs x13fj5qh x1sa5p1d">
                     <span aria-hidden="true">
@@ -95,133 +158,245 @@
             </div>
         `;
 
-        li.addEventListener('click', () => {
+        item.addEventListener('mousedown', (event) => {
+            event.stopPropagation();
+        });
 
-            if (document.querySelector('div[aria-selected="true"]') == null) {
+        item.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const contato = getContatoAtual();
+            if (!contato || !contato.nome) {
                 showToast('Entre na conversa com o cliente para gerar um lembrete');
                 return;
             }
 
-            const nomeContato = getNomeContatoAtual();
-
-            const overlay = document.createElement('div');
-            Object.assign(overlay.style, {
-                position: 'fixed',
-                top: '0',
-                left: '0',
-                width: '100vw',
-                height: '100vh',
-                background: 'rgba(0,0,0,0.6)',
-                zIndex: '10000',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-            });
-
-            const modal = document.createElement('div');
-            Object.assign(modal.style, {
-                background: '#111',
-                padding: '20px',
-                borderRadius: '14px',
-                width: '320px',
-                boxShadow: '0 10px 40px rgba(0,0,0,0.6)',
-                fontFamily: 'Arial, sans-serif',
-                color: '#fff'
-            });
-
-            modal.innerHTML = `
-                <div style="font-size:16px;font-weight:bold;margin-bottom:6px;">
-                    📅 Novo Lembrete
-                </div>
-
-                <div style="font-size:24px;color:#22c55e;margin-bottom:10px;">
-                    Para: ${nomeContato}
-                </div>
-
-                <label style="font-size:12px;color:#aaa;">Data e hora</label>
-                <input id="tmData" type="datetime-local" style="
-                    width:95%;
-                    margin:4px 0 12px 0;
-                    background:#000;
-                    color:#fff;
-                    border:1px solid #333;
-                    border-radius:8px;
-                    padding:8px;
-                ">
-
-                <label style="font-size:12px;color:#aaa;">Motivo</label>
-                <textarea id="tmMotivo" placeholder="Digite o motivo..." style="
-                    width:95%;
-                    height:80px;
-                    resize:none;
-                    background:#000;
-                    color:#fff;
-                    border:1px solid #333;
-                    border-radius:8px;
-                    padding:8px;
-                "></textarea>
-
-                <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">
-                    <button id="tmCancel" style="
-                        background:#333;
-                        border:none;
-                        color:#fff;
-                        padding:8px 12px;
-                        border-radius:8px;
-                        cursor:pointer;
-                    ">Cancelar</button>
-
-                    <button id="tmSave" style="
-                        background:#22c55e;
-                        border:none;
-                        color:#000;
-                        padding:8px 14px;
-                        border-radius:8px;
-                        font-weight:bold;
-                        cursor:pointer;
-                    ">Salvar</button>
-                </div>
-            `;
-
-            overlay.appendChild(modal);
-            document.body.appendChild(overlay);
-
-            const dataInputEl = modal.querySelector('#tmData');
-
-            // ✅ CORREÇÃO DO DATE PICKER
-            dataInputEl.addEventListener('click', () => {
-                if (dataInputEl.showPicker) {
-                    dataInputEl.showPicker();
-                }
-            });
-
-            dataInputEl.focus();
-
-            modal.querySelector('#tmCancel').onclick = () => overlay.remove();
-
-            modal.querySelector('#tmSave').onclick = () => {
-                const dataInput = dataInputEl.value;
-                const motivo = modal.querySelector('#tmMotivo').value;
-
-                if (!dataInput || !motivo.trim()) return;
-
-                const dt = new Date(dataInput);
-                const dataFormatada = dt.toLocaleString('pt-BR');
-                const fotoContato = getFotoContatoAtual();
-
-                window.addCliente({
-                    nome: nomeContato,
-                    data: dataFormatada,
-                    motivo: motivo.trim(),
-                    foto: fotoContato
-                });
-
-                overlay.remove();
-            };
+            openReminderModal(contato);
         });
 
-        wrapper.appendChild(li);
-        menuContainer.appendChild(wrapper);
+        item.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                item.click();
+            }
+        });
+
+        return item;
     }
 
+    function findMenuRoot() {
+        const selectors = [
+            '[role="menu"]',
+            'ul[role="menu"]',
+            'ul[role="listbox"]',
+            'div[role="menu"]',
+            'div[role="application"] ul'
+        ];
+
+        const candidates = [];
+        for (const selector of selectors) {
+            document.querySelectorAll(selector).forEach((element) => {
+                if (isVisible(element)) {
+                    candidates.push(element);
+                }
+            });
+        }
+
+        if (candidates.length === 0) return null;
+
+        const scored = candidates.map((element) => {
+            const rect = element.getBoundingClientRect();
+            const itemCount = element.querySelectorAll('li, [role="button"], [tabindex="0"]').length;
+            const distanceToPointer = Math.hypot(
+                Math.max(0, Math.max(rect.left - lastContextPoint.x, lastContextPoint.x - rect.right)),
+                Math.max(0, Math.max(rect.top - lastContextPoint.y, lastContextPoint.y - rect.bottom))
+            );
+
+            if (rect.width > 600 || rect.height > 700 || itemCount > 40) {
+                return { element, score: -1000 };
+            }
+
+            let score = 0;
+            if (distanceToPointer < 140) score += 1000;
+            if (element.querySelector(`[${REMINDER_ATTR}="true"]`)) score += 500;
+            score += Math.min(itemCount, 30);
+            score += Math.min(rect.width + rect.height, 200);
+
+            return { element, score };
+        });
+
+        scored.sort((a, b) => b.score - a.score);
+        return scored[0] ? scored[0].element : null;
+    }
+
+    function stopMenuObserver() {
+        if (menuObserver) {
+            menuObserver.disconnect();
+            menuObserver = null;
+        }
+        if (menuObserverTimer) {
+            clearTimeout(menuObserverTimer);
+            menuObserverTimer = null;
+        }
+    }
+
+    function observeMenuUntilFound() {
+        if (menuObserver || !document.body) return;
+
+        menuObserver = new MutationObserver(() => {
+            if (injectReminderOption()) {
+                stopMenuObserver();
+            }
+        });
+
+        menuObserver.observe(document.body, { childList: true, subtree: true });
+        menuObserverTimer = setTimeout(stopMenuObserver, 2000);
+    }
+
+    function scheduleMenuInjection() {
+        stopMenuObserver();
+        if (scanTimer) {
+            clearTimeout(scanTimer);
+        }
+
+        scanTimer = setTimeout(() => {
+            if (!injectReminderOption()) {
+                observeMenuUntilFound();
+            }
+        }, 60);
+    }
+
+    function injectReminderOption() {
+        const menuContainer = findMenuRoot();
+        if (!menuContainer) return false;
+        if (menuContainer.querySelector(`[${REMINDER_ATTR}="true"]`)) return true;
+
+        const referenceElement = menuContainer.querySelector('li, [role="button"], [tabindex="0"]');
+        const reminderItem = buildReminderItem(referenceElement);
+
+        menuContainer.appendChild(reminderItem);
+        return true;
+    }
+
+    function openReminderModal(contato) {
+        const overlay = document.createElement('div');
+        Object.assign(overlay.style, {
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.6)',
+            zIndex: '10000',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        });
+
+        const modal = document.createElement('div');
+        Object.assign(modal.style, {
+            background: '#111',
+            padding: '20px',
+            borderRadius: '14px',
+            width: '320px',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.6)',
+            fontFamily: 'Arial, sans-serif',
+            color: '#fff'
+        });
+
+        modal.innerHTML = `
+            <div style="font-size:16px;font-weight:bold;margin-bottom:6px;">
+                📅 Novo Lembrete
+            </div>
+
+            <div style="font-size:24px;color:#22c55e;margin-bottom:10px;">
+                Para: ${contato.nome}
+            </div>
+
+            <label style="font-size:12px;color:#aaa;">Data e hora</label>
+            <input id="tmData" type="datetime-local" style="
+                width:95%;
+                margin:4px 0 12px 0;
+                background:#000;
+                color:#fff;
+                border:1px solid #333;
+                border-radius:8px;
+                padding:8px;
+            ">
+
+            <label style="font-size:12px;color:#aaa;">Motivo</label>
+            <textarea id="tmMotivo" placeholder="Digite o motivo..." style="
+                width:95%;
+                height:80px;
+                resize:none;
+                background:#000;
+                color:#fff;
+                border:1px solid #333;
+                border-radius:8px;
+                padding:8px;
+            "></textarea>
+
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">
+                <button id="tmCancel" style="
+                    background:#333;
+                    border:none;
+                    color:#fff;
+                    padding:8px 12px;
+                    border-radius:8px;
+                    cursor:pointer;
+                ">Cancelar</button>
+
+                <button id="tmSave" style="
+                    background:#22c55e;
+                    border:none;
+                    color:#000;
+                    padding:8px 14px;
+                    border-radius:8px;
+                    font-weight:bold;
+                    cursor:pointer;
+                ">Salvar</button>
+            </div>
+        `;
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        const dataInputEl = modal.querySelector('#tmData');
+
+        dataInputEl.addEventListener('click', () => {
+            if (dataInputEl.showPicker) {
+                dataInputEl.showPicker();
+            }
+        });
+
+        dataInputEl.focus();
+
+        modal.querySelector('#tmCancel').onclick = () => overlay.remove();
+
+        modal.querySelector('#tmSave').onclick = () => {
+            const dataInput = dataInputEl.value;
+            const motivo = modal.querySelector('#tmMotivo').value;
+
+            if (!dataInput || !motivo.trim()) return;
+
+            const dt = new Date(dataInput);
+            const dataFormatada = dt.toLocaleString('pt-BR');
+
+            window.addCliente({
+                nome: contato.nome,
+                data: dataFormatada,
+                motivo: motivo.trim(),
+                foto: contato.foto
+            });
+
+            overlay.remove();
+        };
+    }
+
+    window.addEventListener('contextmenu', (event) => {
+        lastContextTarget = event.target instanceof Element ? event.target : null;
+        lastContextPoint = { x: event.clientX, y: event.clientY };
+        scheduleMenuInjection();
+    }, true);
 })();
