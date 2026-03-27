@@ -67,6 +67,7 @@
     }
 
     function injectReminderOption() {
+        console.log('injectReminderOption')
         const menuContainer = document.querySelector('div[role="grid"] div');
         if (!menuContainer) {
             setTimeout(injectReminderOption, 1000);
