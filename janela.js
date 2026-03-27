@@ -72,6 +72,57 @@
         ).getTime();
     }
 
+    function showToast(message) {
+        if (document.querySelector('#tm-toast')) return;
+
+        const toast = document.createElement('div');
+        toast.id = 'tm-toast';
+        toast.innerText = message;
+
+        Object.assign(toast.style, {
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: '#000',
+            color: '#fff',
+            padding: '28px 40px',
+            borderRadius: '20px',
+            fontSize: '20px',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            boxShadow: '0 0 0 9999px rgba(0,0,0,0.65)',
+            zIndex: '999999',
+            opacity: '0',
+            transition: 'opacity 0.25s ease'
+        });
+
+        document.body.appendChild(toast);
+
+        requestAnimationFrame(() => toast.style.opacity = '1');
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 2500);
+    }
+
+    function getNomeContatoAtual() {
+        const selecionado = document.querySelector('div[aria-selected="true"]');
+        if (!selecionado) return null;
+        const nomeSpan = selecionado.querySelector('span[title]');
+        if (!nomeSpan) return null;
+        return nomeSpan.getAttribute('title');
+    }
+
+    function getFotoContatoAtual() {
+        const selecionado = document.querySelector('div[aria-selected="true"]');
+        if (!selecionado) return null;
+        const img = selecionado.querySelector('img');
+        if (!img) return null;
+        return img.src;
+    }
+
     const waitForBody = setInterval(() => {
         if (document.body) {
             clearInterval(waitForBody);
@@ -160,6 +211,151 @@
         toggleBtn.style.fontSize = '24px';
         toggleBtn.style.lineHeight = '1';
 
+        const addBtn = document.createElement('button');
+        addBtn.title = 'Novo Lembrete';
+        addBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Agendar`;
+        Object.assign(addBtn.style, {
+            cursor: 'pointer',
+            background: '#00a884',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '6px',
+            padding: '4px 10px',
+            fontSize: '12px',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            lineHeight: '1',
+            transition: 'background 0.2s'
+        });
+        addBtn.onmouseenter = () => addBtn.style.background = '#00c49a';
+        addBtn.onmouseleave = () => addBtn.style.background = '#00a884';
+
+        addBtn.onclick = () => {
+            if (document.querySelector('div[aria-selected="true"]') == null) {
+                showToast('Entre na conversa com o cliente para gerar um lembrete');
+                return;
+            }
+
+            const nomeContato = getNomeContatoAtual();
+
+            const overlay = document.createElement('div');
+            Object.assign(overlay.style, {
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                width: '100vw',
+                height: '100vh',
+                background: 'rgba(0,0,0,0.6)',
+                zIndex: '10000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            });
+
+            const modal = document.createElement('div');
+            Object.assign(modal.style, {
+                background: '#111',
+                padding: '20px',
+                borderRadius: '14px',
+                width: '320px',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.6)',
+                fontFamily: 'Arial, sans-serif',
+                color: '#fff'
+            });
+
+            modal.innerHTML = `
+                <div style="font-size:16px;font-weight:bold;margin-bottom:6px;">
+                    \ud83d\udcc5 Novo Lembrete
+                </div>
+
+                <div style="font-size:24px;color:#22c55e;margin-bottom:10px;">
+                    Para: ${nomeContato}
+                </div>
+
+                <label style="font-size:12px;color:#aaa;">Data e hora</label>
+                <input id="tmData" type="datetime-local" style="
+                    width:95%;
+                    margin:4px 0 12px 0;
+                    background:#000;
+                    color:#fff;
+                    border:1px solid #333;
+                    border-radius:8px;
+                    padding:8px;
+                ">
+
+                <label style="font-size:12px;color:#aaa;">Motivo</label>
+                <textarea id="tmMotivo" placeholder="Digite o motivo..." style="
+                    width:95%;
+                    height:80px;
+                    resize:none;
+                    background:#000;
+                    color:#fff;
+                    border:1px solid #333;
+                    border-radius:8px;
+                    padding:8px;
+                "></textarea>
+
+                <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">
+                    <button id="tmCancel" style="
+                        background:#333;
+                        border:none;
+                        color:#fff;
+                        padding:8px 12px;
+                        border-radius:8px;
+                        cursor:pointer;
+                    ">Cancelar</button>
+
+                    <button id="tmSave" style="
+                        background:#22c55e;
+                        border:none;
+                        color:#000;
+                        padding:8px 14px;
+                        border-radius:8px;
+                        font-weight:bold;
+                        cursor:pointer;
+                    ">Salvar</button>
+                </div>
+            `;
+
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+
+            const dataInputEl = modal.querySelector('#tmData');
+
+            dataInputEl.addEventListener('click', () => {
+                if (dataInputEl.showPicker) {
+                    dataInputEl.showPicker();
+                }
+            });
+
+            dataInputEl.focus();
+
+            modal.querySelector('#tmCancel').onclick = () => overlay.remove();
+
+            modal.querySelector('#tmSave').onclick = () => {
+                const dataInput = dataInputEl.value;
+                const motivo = modal.querySelector('#tmMotivo').value;
+
+                if (!dataInput || !motivo.trim()) return;
+
+                const dt = new Date(dataInput);
+                const dataFormatada = dt.toLocaleString('pt-BR');
+                const fotoContato = getFotoContatoAtual();
+
+                window.addCliente({
+                    nome: nomeContato,
+                    data: dataFormatada,
+                    motivo: motivo.trim(),
+                    foto: fotoContato
+                });
+
+                overlay.remove();
+            };
+        };
+
+        controls.appendChild(addBtn);
         controls.appendChild(themeBtn);
         controls.appendChild(toggleBtn);
         header.appendChild(title);
@@ -388,6 +584,7 @@
             if (minimized) {
                 content.style.display = 'none';
                 box.style.height = '45px'; // Altura compacta para o header
+                addBtn.style.display = 'none';
                 themeBtn.style.display = 'none';
                 resizeHandleBL.style.display = 'none';
                 resizeHandleBR.style.display = 'none';
@@ -397,6 +594,7 @@
                 const tamanho = carregarTamanhoJanela() || { largura: 500, altura: 400 };
                 box.style.height = tamanho.altura + 'px';
                 content.style.display = 'grid';
+                addBtn.style.display = 'block';
                 themeBtn.style.display = 'block';
                 resizeHandleBL.style.display = 'block';
                 resizeHandleBR.style.display = 'block';
@@ -412,7 +610,7 @@
         let offsetY = 0;
 
         header.addEventListener('mousedown', (e) => {
-            if (e.target === toggleBtn || e.target === themeBtn) return; // Não iniciar drag se clicar nos botões
+            if (e.target === toggleBtn || e.target === themeBtn || e.target === addBtn) return; // Não iniciar drag se clicar nos botões
             isDragging = true;
             const rect = box.getBoundingClientRect();
             offsetX = e.clientX - rect.left;
